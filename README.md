@@ -1,2 +1,0 @@
-# benbenbebenbeben
-ネット用
