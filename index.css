@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Ryotaro Portfolio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: none;
+}
+canvas { display: block; }
+
+/* マウストレイル */
+#trail {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* ===== Left Menu ===== */
+.menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 100vh;
+  padding: 32px 24px;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(6px);
+  z-index: 30;
+}
+.menu .logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .25em;
+  color: #fff;
+  margin-bottom: 40px;
+}
+.menu a {
+  display:block;
+  color:#fff;
+  text-decoration:none;
+  font-size:13px;
+  letter-spacing:.15em;
+  opacity:.6;
+  margin-bottom:22px;
+}
+.menu a:hover{opacity:1}
+
+/* ===== Layout Toggle ===== */
+.layout-toggle {
+  position: fixed;
+  top: 36px;
+  right: 36px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  z-index: 35;
+}
+.mode-label {
+  color:#fff;
+  font-size:10px;
+  letter-spacing:.3em;
+  opacity:.6;
+  padding: 8px 6px 8px 10px;
+}
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 10px;
+  letter-spacing: .25em;
+  padding: 8px 14px;
+  opacity: .5;
+  cursor: pointer;
+  font-family: inherit;
+}
+.toggle-btn.active {
+  opacity: 1;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+}
+
+/* ===== Loader ===== */
+.loader {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 50;
+  overflow: hidden;
+  transition: opacity .35s ease;
+}
+.loader.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+.loader-ui {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.loader-ring {
+  position:relative;
+  width:160px;
+  height:160px;
+}
+.percent {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:16px;
+  letter-spacing:.2em;
+}
+.loading-text {
+  margin-top:16px;
+  font-size:11px;
+  letter-spacing:.4em;
+  color:#fff;
+  opacity:.6;
+}
+
+/* 回る縁 */
+#ring {
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+  animation: ringSpin 1.2s linear infinite;
+}
+@keyframes ringSpin {
+  from { transform: rotate(-90deg); }
+  to   { transform: rotate(270deg); }
+}
+
+/* ===== Custom Cursor ===== */
+.cursor {
+  position:fixed;
+  top:0; left:0;
+  pointer-events:none;
+  z-index:100;
+}
+.cursor-dot {
+  width:6px;
+  height:6px;
+  background:#fff;
+  border-radius:50%;
+  position:absolute;
+  transform:translate(-50%,-50%);
+  transition:transform .2s ease, background .2s ease;
+}
+.cursor-ring {
+  width:48px;
+  height:48px;
+  border:1px solid rgba(255,255,255,.6);
+  border-radius:50%;
+  position:absolute;
+  transform:translate(-50%,-50%);
+  transition:transform .2s ease, opacity .2s ease, border-color .2s ease;
+}
+.cursor-text {
+  position:absolute;
+  top:60px;
+  left:50%;
+  transform:translateX(-50%);
+  color:#fff;
+  font-size:10px;
+  letter-spacing:.2em;
+  opacity:0;
+  transition:opacity .2s;
+}
+.cursor.active .cursor-ring {
+  transform:translate(-50%,-50%) scale(1.7);
+}
+.cursor.active .cursor-text {
+  opacity:.8;
+}
+
+/* ===== Cursor Hover Gray ===== */
+.cursor.gray .cursor-dot {
+  background: #9b9b9b;
+}
+.cursor.gray .cursor-ring {
+  border-color: rgba(180,180,180,.8);
+}
+
+/* ===== Cursor Hover Scale (dot only) ===== */
+.cursor.hover .cursor-dot {
+  transform: translate(-50%,-50%) scale(2.2);
+}
+
+/* ===== Cursor Press on Image (dot bigger) ===== */
+.cursor.press .cursor-dot {
+  transform: translate(-50%,-50%) scale(3.2);
+}
+
+/* ===== UI ===== */
+.title {
+  position:fixed;
+  top:48px;
+  left:50%;
+  transform:translateX(-50%);
+  color:#fff;
+  font-size:22px;
+  letter-spacing:.25em;
+  z-index:10;
+}
+.counter {
+  position:fixed;
+  bottom:18px;
+  left:50%;
+  transform:translateX(-50%);
+  color:#fff;
+  opacity:.8;
+  z-index:10;
+}
+
+/* ===== Arrows ===== */
+.arrow {
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:72px;
+  color:#fff;
+  opacity:.35;
+  cursor:pointer;
+  z-index:20;
+  user-select:none;
+}
+.arrow.left { left:240px; }
+.arrow.right { right:240px; }
+.arrow:hover{opacity:.9}
+</style>
+</head>
+<body>
+
+<aside class="menu">
+  <div class="logo">良太郎</div>
+  <a href="profile.html">プロフィール</a>
+  <a>イラストレーション</a>
+  <a>デザイン</a>
+</aside>
+
+<div class="layout-toggle">
+  <span class="mode-label">MODE</span>
+  <button class="toggle-btn active" data-mode="ring">RING</button>
+  <button class="toggle-btn" data-mode="sphere">SPHERE</button>
+</div>
+
+<!-- Loader -->
+<div class="loader" id="loader">
+  <div class="loader-ui">
+    <div class="loader-ring">
+      <svg width="160" height="160">
+        <circle cx="80" cy="80" r="68"
+          stroke="rgba(255,255,255,.2)"
+          stroke-width="2" fill="none"/>
+        <circle id="ring"
+          cx="80" cy="80" r="68"
+          stroke="#fff"
+          stroke-width="2"
+          fill="none"
+          stroke-linecap="round"
+        />
+      </svg>
+      <div class="percent" id="percent">0%</div>
+    </div>
+    <div class="loading-text">LOADING</div>
+  </div>
+</div>
+
+<canvas id="trail"></canvas>
+
+<!-- Cursor -->
+<div class="cursor" id="cursor">
+  <div class="cursor-dot"></div>
+  <div class="cursor-ring"></div>
+  <div class="cursor-text">DRAG</div>
+</div>
+
+<!-- Arrows -->
+<div class="arrow left" id="arrowLeft">‹</div>
+<div class="arrow right" id="arrowRight">›</div>
+
+<div class="title" id="title"></div>
+<div class="counter" id="counter"></div>
+
+<script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+<script>
+/* ================= Custom Cursor ================= */
+const cursor = document.getElementById("cursor");
+const ringText = cursor.querySelector(".cursor-text");
+let cx=0, cy=0, tx=0, ty=0;
+
+addEventListener("mousemove",e=>{
+  tx=e.clientX; ty=e.clientY;
+});
+function cursorLoop(){
+  cx += (tx-cx)*0.2;
+  cy += (ty-cy)*0.2;
+  cursor.style.transform=`translate(${cx}px,${cy}px)`;
+  requestAnimationFrame(cursorLoop);
+}
+cursorLoop();
+addEventListener("mousedown",()=>{
+  cursor.classList.add("active");
+  ringText.textContent="DRAG";
+});
+addEventListener("mouseup",()=>{
+  cursor.classList.remove("active");
+  cursor.classList.remove("press");
+  ringText.textContent="VIEW";
+});
+
+/* ================= Mouse Trail ================= */
+const trailCanvas = document.getElementById("trail");
+const tctx = trailCanvas.getContext("2d");
+let trailPoints = [];
+function resizeTrail(){
+  trailCanvas.width = innerWidth;
+  trailCanvas.height = innerHeight;
+}
+resizeTrail();
+
+addEventListener("mousemove", e=>{
+  trailPoints.push({x:e.clientX, y:e.clientY, t: performance.now()});
+  if(trailPoints.length > 80) trailPoints.shift();
+});
+addEventListener("mouseleave", ()=>{
+  trailPoints = [];
+});
+
+function drawTrail(){
+  const now = performance.now();
+  while(trailPoints.length && now - trailPoints[0].t > 420) trailPoints.shift();
+  tctx.clearRect(0,0,trailCanvas.width, trailCanvas.height);
+  if(trailPoints.length < 2) return;
+
+  tctx.lineCap = "round";
+  tctx.lineJoin = "round";
+
+  for(let i=1;i<trailPoints.length;i++){
+    const p0 = trailPoints[i-1];
+    const p1 = trailPoints[i];
+    const age = (now - p1.t) / 420;
+    const alpha = Math.max(0, 0.35 * (1 - age));
+    const width = 1.6 * (1 - age) + 0.2;
+
+    tctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+    tctx.lineWidth = width;
+    tctx.beginPath();
+    tctx.moveTo(p0.x, p0.y);
+    tctx.lineTo(p1.x, p1.y);
+    tctx.stroke();
+  }
+}
+
+/* ================= Three.js ================= */
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,200);
+const ringCamZ=15;
+const sphereCamZ=22;
+let targetCamZ=ringCamZ;
+camera.position.z=ringCamZ;
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+/* ===== Particles ===== */
+const particleCount = 1200;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(particleCount * 3);
+for(let i=0;i<particleCount;i++){
+  pPos[i*3+0] = (Math.random()-0.5)*60;
+  pPos[i*3+1] = (Math.random()-0.5)*60;
+  pPos[i*3+2] = (Math.random()-0.5)*60;
+}
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+const pMat = new THREE.PointsMaterial({
+  color: 0xffffff,
+  size: 0.08,
+  transparent: true,
+  opacity: 0.7,
+  depthWrite: false
+});
+const particles = new THREE.Points(pGeo, pMat);
+scene.add(particles);
+
+/* Hover Raycaster */
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let hovering = false;
+let hoverObj = null;
+
+addEventListener("mousemove", e => {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+});
+
+/* Data */
+const images=[...Array(15)].map((_,i)=>`https://picsum.photos/1400/900?random=${i+1}`);
+const COUNT=images.length;
+
+/* 角数字変換 */
+const toZenkaku = (n) => n.toString().replace(/[0-9]/g, d =>
+  String.fromCharCode(d.charCodeAt(0) + 0xFEE0)
+);
+
+/* タイトル表示（１.com〜１５.com） */
+const titles = Array.from({length: COUNT}, (_,i)=>`${toZenkaku(i+1)}.com`);
+
+/* リンク（1.com〜15.com） */
+const links = Array.from({length: COUNT}, (_,i)=>`https://${i+1}.com`);
+
+const STEP=Math.PI*2/COUNT;
+const RING_RADIUS=12.5;
+const SPHERE_RADIUS=12;
+const SPHERE_SCALE=0.8;
+
+/* Loader ring */
+const percent=document.getElementById("percent");
+const ring=document.getElementById("ring");
+const loader=document.getElementById("loader");
+const CIRC=2*Math.PI*68;
+ring.style.strokeDasharray=CIRC;
+ring.style.strokeDashoffset=CIRC;
+let loaded=0;
+let ready=false;
+
+/* 戻る時はローダーをスキップ */
+const navEntry = performance.getEntriesByType("navigation")[0];
+const isBackForward = navEntry && navEntry.type === "back_forward";
+const skipFlag = sessionStorage.getItem("skipLoader") === "1";
+if (isBackForward || skipFlag) {
+  loader.classList.add("hide");
+  ready = true;
+  percent.textContent = "100%";
+  ring.style.strokeDashoffset = 0;
+}
+if (!isBackForward) sessionStorage.removeItem("skipLoader");
+
+window.addEventListener("pageshow", (e)=>{
+  if (e.persisted) {
+    loader.classList.add("hide");
+    ready = true;
+  }
+});
+
+function loadedOne(){
+  loaded++;
+  const p=loaded/COUNT;
+  percent.textContent=`${Math.round(p*100)}%`;
+  ring.style.strokeDashoffset=CIRC*(1-p);
+  if(p===1){
+    setTimeout(()=>{
+      if (!ready) {
+        loader.classList.add("hide");
+        ready=true;
+      }
+    },200);
+  }
+}
+
+/* Group */
+const group = new THREE.Group();
+scene.add(group);
+
+/* Sphere positions */
+const spherePositions=[];
+const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+for(let i=0;i<COUNT;i++){
+  const y = 1 - (i / (COUNT - 1)) * 2;
+  const r = Math.sqrt(1 - y*y);
+  const theta = goldenAngle * i;
+  spherePositions.push(new THREE.Vector3(
+    Math.cos(theta) * r * SPHERE_RADIUS,
+    y * SPHERE_RADIUS,
+    Math.sin(theta) * r * SPHERE_RADIUS
+  ));
+}
+
+/* Mesh */
+const texLoader=new THREE.TextureLoader();
+const meshes=[];
+images.forEach((url,i)=>{
+  const mat=new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:1});
+  texLoader.load(
+    url,
+    t=>{mat.map=t;mat.needsUpdate=true;loadedOne();},
+    undefined,
+    loadedOne
+  );
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(9,6),mat);
+  m.userData.index = i;
+  group.add(m);
+  meshes.push(m);
+});
+
+/* ===== Layout Toggle ===== */
+let layoutMode = "ring";
+const layoutButtons = document.querySelectorAll(".toggle-btn");
+
+let currentIndex = 0;
+
+function setLayout(mode){
+  layoutMode = mode;
+  layoutButtons.forEach(b=>b.classList.toggle("active", b.dataset.mode===mode));
+
+  if(mode==="ring"){
+    targetCamZ = ringCamZ;
+    ringSnap = currentIndex;
+    ringIndex = currentIndex;
+    ringVel = 0;
+    ringScale = ringBaseScale;
+    group.rotation.set(0,0,0);
+    targetRotX = 0;
+    targetRotY = 0;
+    velX = 0;
+    velY = 0;
+  }else{
+    targetCamZ = sphereCamZ;
+    snapToIndex(currentIndex);
+  }
+}
+layoutButtons.forEach(btn=>{
+  btn.addEventListener("click", ()=>setLayout(btn.dataset.mode));
+});
+
+/* ===== Ring State ===== */
+let ringIndex=0, ringSnap=0, ringVel=0, ringScale=1;
+let ringPointerDown=false, ringDrag=false, ringDragMoved=false;
+let ringLastX=0, ringStartX=0;
+const ringBaseScale=1.6, ringDragScale=.7;
+
+/* ===== Sphere State ===== */
+let sphereDragging=false;
+let sphereDragMoved=false;
+let sphereStartX=0,sphereStartY=0;
+let sphereLastX=0,sphereLastY=0;
+let targetRotX=0,targetRotY=0;
+let velX=0,velY=0;
+
+function isUIEvent(e){
+  return e.target.closest(".menu, .layout-toggle, .arrow");
+}
+
+/* Mouse interactions */
+addEventListener("mousedown",e=>{
+  if(isUIEvent(e)) return;
+
+  if(layoutMode==="ring"){
+    ringPointerDown=true;
+    ringDrag=false;
+    ringDragMoved=false;
+    ringStartX=e.clientX;
+    ringLastX=e.clientX;
+    ringVel=0;
+  }else{
+    sphereDragging=true;
+    sphereDragMoved=false;
+    sphereStartX=e.clientX;
+    sphereStartY=e.clientY;
+    sphereLastX=e.clientX;
+    sphereLastY=e.clientY;
+    velX=0; velY=0;
+  }
+});
+addEventListener("mousemove",e=>{
+  if(layoutMode==="ring" && ringPointerDown){
+    if(Math.abs(e.clientX-ringStartX)>4){
+      ringDrag=true;
+      ringDragMoved=true;
+    }
+    if(ringDrag){
+      ringVel-=(e.clientX-ringLastX)*0.002;
+      ringLastX=e.clientX;
+    }
+  }
+  if(layoutMode==="sphere" && sphereDragging){
+    const dx = e.clientX - sphereLastX;
+    const dy = e.clientY - sphereLastY;
+    if(Math.abs(e.clientX-sphereStartX)>4 || Math.abs(e.clientY-sphereStartY)>4) sphereDragMoved=true;
+    velY = dx * 0.003;
+    velX = dy * 0.003;
+    targetRotY += velY;
+    targetRotX += velX;
+    sphereLastX = e.clientX;
+    sphereLastY = e.clientY;
+  }
+});
+addEventListener("mouseup",()=>{
+  if(layoutMode==="ring"){
+    ringPointerDown=false;
+    if(ringDragMoved){
+      ringDrag=false;
+      ringSnap = Math.round(ringIndex);
+    }else if(hoverObj){
+      const idx = hoverObj.userData.index;
+      if(idx === currentIndex && links[idx] && ready){
+        sessionStorage.setItem("skipLoader","1");
+        window.location.href = links[idx];
+        return;
+      }
+      ringSnap = idx;
+    }
+  }else{
+    sphereDragging=false;
+    if(!sphereDragMoved && hoverObj){
+      const idx = hoverObj.userData.index;
+      if(idx === currentIndex && links[idx] && ready){
+        sessionStorage.setItem("skipLoader","1");
+        window.location.href = links[idx];
+        return;
+      }
+      snapToIndex(idx);
+    }
+  }
+});
+
+/* Click press effect */
+addEventListener("mousedown", (e)=>{
+  if(hovering && !isUIEvent(e)) cursor.classList.add("press");
+});
+addEventListener("mouseup", ()=>{
+  cursor.classList.remove("press");
+});
+
+/* ===== Ring Layout ===== */
+function layoutRing(){
+  meshes.forEach((m,i)=>{
+    const o=i-ringIndex,a=o*STEP,d=Math.cos(a);
+    m.position.set(Math.sin(a)*RING_RADIUS,0,d*RING_RADIUS-RING_RADIUS);
+    const s=THREE.MathUtils.mapLinear(d,-1,1,.65,1.15)*ringScale;
+    m.scale.set(s,s,1);
+    m.rotation.set(0,0,0);
+  });
+}
+
+/* ===== Sphere Snap ===== */
+function snapToIndex(i){
+  currentIndex = ((i%COUNT)+COUNT)%COUNT;
+  const dir = spherePositions[currentIndex].clone().normalize();
+  const yaw = -Math.atan2(dir.x, dir.z);
+  const pitch = Math.atan2(dir.y, Math.sqrt(dir.x*dir.x + dir.z*dir.z));
+  targetRotY = yaw;
+  targetRotX = pitch;
+  velX = 0; velY = 0;
+}
+
+/* ===== Arrows ===== */
+const arrowLeft = document.getElementById("arrowLeft");
+const arrowRight = document.getElementById("arrowRight");
+
+function goNext(){
+  if(layoutMode==="ring") ringSnap++;
+  else snapToIndex(currentIndex+1);
+}
+function goPrev(){
+  if(layoutMode==="ring") ringSnap--;
+  else snapToIndex(currentIndex-1);
+}
+
+arrowRight.addEventListener("click", goNext);
+arrowLeft.addEventListener("click", goPrev);
+
+addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight") goNext();
+  if(e.key==="ArrowLeft") goPrev();
+});
+
+/* UI */
+const titleEl = document.getElementById("title");
+const counterEl = document.getElementById("counter");
+
+/* front index for sphere */
+const tmpPos = new THREE.Vector3();
+const camDir = new THREE.Vector3();
+function getFrontIndex(){
+  camera.getWorldDirection(camDir);
+  let best=0, bestDot=-Infinity;
+  for(let i=0;i<COUNT;i++){
+    meshes[i].getWorldPosition(tmpPos);
+    tmpPos.sub(camera.position).normalize();
+    const d = tmpPos.dot(camDir);
+    if(d>bestDot){ bestDot=d; best=i; }
+  }
+  return best;
+}
+
+/* Animate */
+function animate(){
+  requestAnimationFrame(animate);
+
+  drawTrail();
+
+  // particles subtle motion
+  particles.rotation.y += 0.0006;
+  particles.rotation.x += 0.0003;
+
+  camera.position.z += (targetCamZ - camera.position.z) * 0.08;
+
+  if(layoutMode==="ring"){
+    group.rotation.set(0,0,0);
+
+    if(ringDrag){ ringIndex+=ringVel; ringVel*=.85; }
+    else ringIndex+=(ringSnap-ringIndex)*.18;
+
+    ringScale+=((ringDrag?ringDragScale:ringBaseScale)-ringScale)*.12;
+    layoutRing();
+
+    currentIndex = ((Math.round(ringIndex)%COUNT)+COUNT)%COUNT;
+  }else{
+    if(!sphereDragging){
+      targetRotY += velY;
+      targetRotX += velX;
+      velY *= 0.92;
+      velX *= 0.92;
+    }
+
+    group.rotation.y += (targetRotY - group.rotation.y) * 0.08;
+    group.rotation.x += (targetRotX - group.rotation.x) * 0.08;
+
+    meshes.forEach((m,i)=>{
+      m.position.lerp(spherePositions[i], 0.08);
+      m.scale.set(SPHERE_SCALE, SPHERE_SCALE, 1);
+      m.lookAt(camera.position);
+    });
+
+    currentIndex = getFrontIndex();
+  }
+
+  // 明るさ調整
+  if(layoutMode==="sphere"){
+    const minOpacity = 0.15;
+    const maxOpacity = 1.0;
+    const near = Math.max(1, camera.position.z - SPHERE_RADIUS);
+    const far  = camera.position.z + SPHERE_RADIUS;
+
+    meshes.forEach(m=>{
+      m.getWorldPosition(tmpPos);
+      const dist = tmpPos.distanceTo(camera.position);
+      const t = THREE.MathUtils.clamp(1 - (dist - near) / (far - near), 0, 1);
+      m.material.opacity = minOpacity + (maxOpacity - minOpacity) * t;
+    });
+  }else{
+    const dimOpacity = 0.45;
+    meshes.forEach((m,i)=>{
+      m.material.opacity = (i === currentIndex) ? 1 : dimOpacity;
+    });
+  }
+
+  titleEl.textContent = titles[currentIndex];
+  counterEl.textContent = `${currentIndex+1} / ${COUNT}`;
+
+  // hover check
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(meshes);
+  const nowHover = hits.length > 0;
+  hoverObj = nowHover ? hits[0].object : null;
+  if (nowHover !== hovering) {
+    hovering = nowHover;
+    cursor.classList.toggle("gray", hovering);
+    cursor.classList.toggle("hover", hovering);
+  }
+
+  renderer.render(scene,camera);
+}
+animate();
+
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  resizeTrail();
+});
+</script>
+
+</body>
+</html>
